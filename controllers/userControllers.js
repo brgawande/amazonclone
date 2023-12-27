@@ -1,5 +1,6 @@
 const { catchAsyncError } = require("../middlewares/catchAsyncError");
 const User = require("../models/userModel");
+const ErrorHandler = require("../utils/ErrorHandler");
 
 const createUser = catchAsyncError(async (req, res, next) => {
   const email = req.body.email;
@@ -19,4 +20,36 @@ const createUser = catchAsyncError(async (req, res, next) => {
   }
 });
 
-module.exports = { createUser };
+const loginUser = catchAsyncError(async (req, res, next) => {
+  const { email, password } = req.body;
+
+  const findUser = await User.findOne({ email });
+  if (!findUser)
+    return next(new ErrorHandler("Incorrect Email Or Password", 404));
+
+  const isMatch = await findUser.comparePassword(password);
+  if (!isMatch)
+    return next(new ErrorHandler("Incorrect email or password", 404));
+
+  res.status(200).json({
+    success: true,
+    message: `Welcome back ${findUser.firstname}`,
+    _id: findUser?._id,
+    firstname: findUser?.firstname,
+    lastname: findUser?.lastname,
+    email: findUser?.email,
+    mobile: findUser?.mobile,
+    token: findUser?._id,
+  });
+});
+
+// get all users
+const getallUsers = catchAsyncError(async (req, res, next) => {
+  const getUsers = await User.find();
+  res.status(200).json({
+    success: true,
+    getUsers,
+  });
+});
+
+module.exports = { createUser, loginUser, getallUsers };
