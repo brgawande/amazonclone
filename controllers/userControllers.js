@@ -1,6 +1,8 @@
+const { generateToken } = require("../config/jwtToken");
 const { catchAsyncError } = require("../middlewares/catchAsyncError");
 const User = require("../models/userModel");
 const ErrorHandler = require("../utils/ErrorHandler");
+const validateMongoDbId = require("../utils/validateMongoDbId");
 
 const createUser = catchAsyncError(async (req, res, next) => {
   const email = req.body.email;
@@ -39,13 +41,14 @@ const loginUser = catchAsyncError(async (req, res, next) => {
     lastname: findUser?.lastname,
     email: findUser?.email,
     mobile: findUser?.mobile,
-    token: findUser?._id,
+    token: generateToken(findUser?._id),
   });
 });
 
 // update user
 const updateUser = catchAsyncError(async (req, res, next) => {
-  const id = req.params.id;
+  const id = req.user._id;
+  validateMongoDbId(id);
   const updateUser = await User.findByIdAndUpdate(
     id,
     {
@@ -77,6 +80,7 @@ const getallUsers = catchAsyncError(async (req, res, next) => {
 // get a single user
 const getsingleUser = catchAsyncError(async (req, res, next) => {
   const id = req.params.id;
+  validateMongoDbId(id);
   const user = await User.findById(id);
 
   if (!user) return next(new ErrorHandler("User Not Found", 404));
@@ -87,14 +91,65 @@ const getsingleUser = catchAsyncError(async (req, res, next) => {
   });
 });
 
+// get my profile
+const getmyprofile = catchAsyncError(async (req, res, next) => {
+  const user = await User.findById(req.user._id);
+
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
 // delete a user
 const deleteUser = catchAsyncError(async (req, res, next) => {
   const id = req.params.id;
+  validateMongoDbId(id);
   const deletedUser = await User.findByIdAndDelete(id);
   res.status(200).json({
     success: true,
-    msg: "User Deleted Successfully",
+    message: "User Deleted Successfully",
     deletedUser,
+  });
+});
+
+// block user and unblock
+const blockUser = catchAsyncError(async (req, res, next) => {
+  const id = req.params.id;
+  validateMongoDbId(id);
+  const blockedUser = await User.findByIdAndUpdate(
+    id,
+    {
+      isBlocked: true,
+    },
+    {
+      new: true,
+    }
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "User Blocked Successfully",
+    blockedUser,
+  });
+});
+const UnblockUser = catchAsyncError(async (req, res, next) => {
+  const id = req.params.id;
+  validateMongoDbId(id);
+  const unblockUser = await User.findByIdAndUpdate(
+    id,
+    {
+      isBlocked: false,
+    },
+    {
+      next: true,
+    }
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "User Unblocked Successfully",
+    unblockUser,
   });
 });
 
@@ -105,4 +160,7 @@ module.exports = {
   getsingleUser,
   deleteUser,
   updateUser,
+  getmyprofile,
+  blockUser,
+  UnblockUser,
 };
