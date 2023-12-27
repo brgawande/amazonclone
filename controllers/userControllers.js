@@ -43,6 +43,28 @@ const loginUser = catchAsyncError(async (req, res, next) => {
   });
 });
 
+// update user
+const updateUser = catchAsyncError(async (req, res, next) => {
+  const id = req.params.id;
+  const updateUser = await User.findByIdAndUpdate(
+    id,
+    {
+      firstname: req?.body?.firstname,
+      lastname: req?.body?.lastname,
+      email: req?.body?.email,
+      mobile: req?.body?.mobile,
+    },
+    {
+      new: true,
+    }
+  );
+  res.status(200).json({
+    success: true,
+    message: "User Updated Successfully",
+    updateUser,
+  });
+});
+
 // get all users
 const getallUsers = catchAsyncError(async (req, res, next) => {
   const getUsers = await User.find();
@@ -52,4 +74,35 @@ const getallUsers = catchAsyncError(async (req, res, next) => {
   });
 });
 
-module.exports = { createUser, loginUser, getallUsers };
+// get a single user
+const getsingleUser = catchAsyncError(async (req, res, next) => {
+  const id = req.params.id;
+  const user = await User.findById(id);
+
+  if (!user) return next(new ErrorHandler("User Not Found", 404));
+
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+// delete a user
+const deleteUser = catchAsyncError(async (req, res, next) => {
+  const id = req.params.id;
+  const deletedUser = await User.findByIdAndDelete(id);
+  res.status(200).json({
+    success: true,
+    msg: "User Deleted Successfully",
+    deletedUser,
+  });
+});
+
+module.exports = {
+  createUser,
+  loginUser,
+  getallUsers,
+  getsingleUser,
+  deleteUser,
+  updateUser,
+};
