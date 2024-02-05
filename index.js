@@ -5,6 +5,7 @@ const connectdb = require("./config/connectdb");
 const authRouter = require("./routes/authRoutes");
 const bodyParser = require("body-parser");
 const { errorMiddlewares } = require("./middlewares/errorMiddleares");
+const cookieParser = require("cookie-parser");
 dotenv.config({
   path: "./config/config.env",
 });
@@ -17,6 +18,7 @@ connectdb();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cookieParser());
 
 app.use("/api/user", authRouter);
 

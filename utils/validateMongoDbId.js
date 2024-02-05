@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const ErrorHandler = require("./ErrorHandler");
 
+// this is use to check the id in the database that it is valid or not
 const validateMongoDbId = (id) => {
   const isValid = mongoose.Types.ObjectId.isValid(id);
   if (!isValid)

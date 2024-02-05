@@ -9,6 +9,7 @@ const {
   getmyprofile,
   blockUser,
   UnblockUser,
+  handleRefreshToken,
 } = require("../controllers/userControllers");
 const { authMiddlewares, isAdmin } = require("../middlewares/authMiddlewares");
 
@@ -23,5 +24,6 @@ router.put("/updateuser", authMiddlewares, updateUser);
 router.get("/getmyprofile", authMiddlewares, getmyprofile);
 router.put("/blockuser/:id", authMiddlewares, isAdmin, blockUser);
 router.put("/unblockuser/:id", authMiddlewares, isAdmin, UnblockUser);
+router.get("/refreshtokenh", handleRefreshToken);
 
 module.exports = router;

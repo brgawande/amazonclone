@@ -1,4 +1,5 @@
 const { generateToken } = require("../config/jwtToken");
+const { generatRefreshToken } = require("../config/refreshToken");
 const { catchAsyncError } = require("../middlewares/catchAsyncError");
 const User = require("../models/userModel");
 const ErrorHandler = require("../utils/ErrorHandler");
@@ -29,20 +30,46 @@ const loginUser = catchAsyncError(async (req, res, next) => {
   if (!findUser)
     return next(new ErrorHandler("Incorrect Email Or Password", 404));
 
-  const isMatch = await findUser.comparePassword(password);
-  if (!isMatch)
-    return next(new ErrorHandler("Incorrect email or password", 404));
+  if (findUser && (await findUser.comparePassword(password))) {
+    const refreshToken = await generatRefreshToken(findUser?._id);
+    const updateUser = await User.findByIdAndUpdate(
+      findUser?._id,
+      {
+        refreshToken: refreshToken,
+      },
+      {
+        new: true,
+      }
+    );
+  }
 
-  res.status(200).json({
-    success: true,
-    message: `Welcome back ${findUser.firstname}`,
-    _id: findUser?._id,
-    firstname: findUser?.firstname,
-    lastname: findUser?.lastname,
-    email: findUser?.email,
-    mobile: findUser?.mobile,
-    token: generateToken(findUser?._id),
-  });
+  res
+    .cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    })
+    // const isMatch = await findUser.comparePassword(password);
+    // if (!isMatch)
+    //   return next(new ErrorHandler("Incorrect email or password", 404));
+
+    .res.status(200)
+    .json({
+      success: true,
+      message: `Welcome back ${findUser.firstname}`,
+      _id: findUser?._id,
+      firstname: findUser?.firstname,
+      lastname: findUser?.lastname,
+      email: findUser?.email,
+      mobile: findUser?.mobile,
+      token: generateToken(findUser?._id),
+    });
+});
+
+// handle refresh token
+const handleRefreshToken = catchAsyncError(async (req, res, next) => {
+  // pehele cookie check karo
+  const cookie = req.cookies;
+  console.log(cookie);
 });
 
 // update user
@@ -122,6 +149,7 @@ const blockUser = catchAsyncError(async (req, res, next) => {
     {
       isBlocked: true,
     },
+    // this return the update document we haver update usingFindByIDAndUpdate if this is set to fasle it will return the original document withou being updated
     {
       new: true,
     }
@@ -142,7 +170,7 @@ const UnblockUser = catchAsyncError(async (req, res, next) => {
       isBlocked: false,
     },
     {
-      next: true,
+      new: true,
     }
   );
 
@@ -163,4 +191,5 @@ module.exports = {
   getmyprofile,
   blockUser,
   UnblockUser,
+  handleRefreshToken,
 };
